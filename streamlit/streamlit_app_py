@@ -1,0 +1,1131 @@
+import streamlit as st
+import pandas as pd
+from snowflake.snowpark.context import get_active_session
+
+# ============================================================
+# SESSION
+# ============================================================
+
+session = get_active_session()
+
+# ============================================================
+# PAGE CONFIG
+# ============================================================
+
+st.set_page_config(
+    page_title="Restaurant Analytics Dashboard",
+    page_icon="🍽️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ============================================================
+# CUSTOM CSS
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+
+    /* ========================================================
+       MAIN BACKGROUND
+       ======================================================== */
+
+    .stApp {
+        background: #F4F7FB;
+    }
+
+    .main .block-container {
+        padding-top: 1.5rem;
+        padding-left: 2.5rem;
+        padding-right: 2.5rem;
+        padding-bottom: 3rem;
+        max-width: 1500px;
+    }
+
+    /* ========================================================
+       SIDEBAR
+       ======================================================== */
+
+    [data-testid="stSidebar"] {
+        background: #102A43;
+        border-right: 1px solid #243B53;
+    }
+
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: 1.5rem;
+    }
+
+    [data-testid="stSidebar"] * {
+        color: #FFFFFF;
+    }
+
+    .sidebar-logo {
+        text-align: center;
+        padding: 10px 5px 25px 5px;
+    }
+
+    .sidebar-logo-icon {
+        font-size: 42px;
+    }
+
+    .sidebar-logo-title {
+        font-size: 21px;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-top: 5px;
+    }
+
+    .sidebar-logo-subtitle {
+        font-size: 12px;
+        color: #B8C7D9;
+        margin-top: 3px;
+    }
+
+    .sidebar-section {
+        font-size: 11px;
+        font-weight: 700;
+        color: #8FA8C0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 15px 0 8px 5px;
+    }
+
+    [data-testid="stSidebar"] .stRadio > label {
+        color: #FFFFFF !important;
+        font-weight: 600;
+    }
+
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] {
+        gap: 5px;
+    }
+
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
+        background: transparent;
+        border-radius: 8px;
+        padding: 9px 11px;
+        color: #FFFFFF !important;
+    }
+
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
+        background: #243B53;
+    }
+
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
+        color: #FFFFFF !important;
+        font-size: 14px;
+    }
+
+    /* ========================================================
+       HEADER
+       ======================================================== */
+
+    .main-title {
+        font-size: 38px;
+        font-weight: 800;
+        color: #102A43;
+        margin-bottom: 2px;
+    }
+
+    .subtitle {
+        font-size: 15px;
+        color: #627D98;
+        margin-bottom: 25px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 750;
+        color: #102A43;
+        margin-top: 10px;
+        margin-bottom: 3px;
+    }
+
+    .page-description {
+        font-size: 14px;
+        color: #627D98;
+        margin-bottom: 22px;
+    }
+
+    /* ========================================================
+       KPI CARDS
+       ======================================================== */
+
+    .kpi-card {
+        background: #FFFFFF;
+        border: 1px solid #D9E2EC;
+        border-radius: 12px;
+        padding: 17px 18px;
+        min-height: 112px;
+        box-shadow: 0 3px 10px rgba(16, 42, 67, 0.06);
+    }
+
+    .kpi-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #627D98;
+        margin-bottom: 8px;
+    }
+
+    .kpi-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: #102A43;
+    }
+
+    .kpi-icon {
+        font-size: 20px;
+        float: right;
+    }
+
+    /* ========================================================
+       SECTION HEADERS
+       ======================================================== */
+
+    .section-header {
+        background: #FFFFFF;
+        border-left: 4px solid #159A9C;
+        padding: 10px 14px;
+        margin-top: 22px;
+        margin-bottom: 10px;
+        border-radius: 0 8px 8px 0;
+        box-shadow: 0 2px 7px rgba(16, 42, 67, 0.05);
+    }
+
+    .section-header-title {
+        color: #102A43;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    /* ========================================================
+       CHART SPACING
+       ======================================================== */
+
+    [data-testid="stVerticalBlock"] {
+        gap: 0.5rem;
+    }
+
+    /* ========================================================
+       DATAFRAME
+       ======================================================== */
+
+    [data-testid="stDataFrame"] {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    /* ========================================================
+       FOOTER
+       ======================================================== */
+
+    .footer {
+        text-align: center;
+        color: #829AB1;
+        font-size: 12px;
+        padding: 35px 0 10px 0;
+        border-top: 1px solid #D9E2EC;
+        margin-top: 40px;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ============================================================
+# SIDEBAR NAVIGATION
+# ============================================================
+
+with st.sidebar:
+
+    st.markdown(
+        """
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">🍽️</div>
+            <div class="sidebar-logo-title">
+                Restaurant Analytics
+            </div>
+            <div class="sidebar-logo-subtitle">
+                Business Intelligence Dashboard
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="sidebar-section">Dashboard</div>',
+        unsafe_allow_html=True
+    )
+
+    page = st.radio(
+        "Navigation",
+        [
+            "🏠 Executive Overview",
+            "💰 Sales & Revenue",
+            "🍔 Restaurant & Menu",
+            "👥 Customer Analytics",
+            "🚚 Delivery & Operations"
+        ],
+        label_visibility="collapsed"
+    )
+
+    st.markdown("---")
+
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            padding:15px 5px;
+            color:#B8C7D9;
+            font-size:12px;
+        ">
+            <b>Snowflake Analytics</b><br>
+            Powered by Snowpark
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ============================================================
+# MAIN HEADER
+# ============================================================
+
+st.markdown(
+    '<div class="main-title">🍽️ Restaurant Analytics Dashboard</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="subtitle">'
+    'Executive overview of sales, orders, customers, menu performance and delivery'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+# ============================================================
+# KPI DATA
+# ============================================================
+
+kpi = session.sql("""
+    SELECT
+        TOTAL_ORDERS,
+        TOTAL_ITEMS_SOLD,
+        TOTAL_REVENUE,
+        AVERAGE_ORDER_VALUE,
+        AVERAGE_RATING
+    FROM RESTAURANT_DB.GOLD.KPI_SUMMARY
+""").to_pandas()
+
+row = kpi.iloc[0]
+
+# ============================================================
+# KPI CARDS
+# ============================================================
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    st.markdown(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-title">
+                Total Orders
+                <span class="kpi-icon">📦</span>
+            </div>
+            <div class="kpi-value">
+                {row['TOTAL_ORDERS']:,}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col2:
+    st.markdown(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-title">
+                Items Sold
+                <span class="kpi-icon">🍔</span>
+            </div>
+            <div class="kpi-value">
+                {row['TOTAL_ITEMS_SOLD']:,}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col3:
+    st.markdown(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-title">
+                Total Revenue
+                <span class="kpi-icon">💰</span>
+            </div>
+            <div class="kpi-value">
+                ₹{row['TOTAL_REVENUE']:,.0f}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col4:
+    st.markdown(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-title">
+                Average Order Value
+                <span class="kpi-icon">🧾</span>
+            </div>
+            <div class="kpi-value">
+                ₹{row['AVERAGE_ORDER_VALUE']:,.2f}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col5:
+    st.markdown(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-title">
+                Average Rating
+                <span class="kpi-icon">⭐</span>
+            </div>
+            <div class="kpi-value">
+                {row['AVERAGE_RATING']:.2f}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ============================================================
+# EXECUTIVE OVERVIEW
+# ============================================================
+
+if page == "🏠 Executive Overview":
+
+    st.markdown(
+        """
+        <div class="page-title">Executive Overview</div>
+        <div class="page-description">
+            High-level view of restaurant business performance
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # --------------------------------------------------------
+    # REVENUE TREND - REDUCED WIDTH
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                📈 Revenue Trend
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    revenue_data = session.sql("""
+        SELECT
+            ORDER_DATE,
+            TOTAL_REVENUE
+        FROM RESTAURANT_DB.GOLD.REVENUE_BY_DATE
+        ORDER BY ORDER_DATE
+    """).to_pandas()
+
+    revenue_data["ORDER_DATE"] = pd.to_datetime(
+        revenue_data["ORDER_DATE"]
+    )
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.line_chart(
+            revenue_data.set_index("ORDER_DATE")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # CHANNEL + CUISINE
+    # --------------------------------------------------------
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    💳 Revenue by Order Channel
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        channel_data = session.sql("""
+            SELECT
+                ORDER_CHANNEL,
+                TOTAL_REVENUE
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_CHANNEL
+            ORDER BY TOTAL_REVENUE DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            channel_data.set_index("ORDER_CHANNEL")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+    with col2:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    🌍 Revenue by Cuisine
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        cuisine_data = session.sql("""
+            SELECT
+                CUISINE,
+                TOTAL_REVENUE
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_CUISINE
+            ORDER BY TOTAL_REVENUE DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            cuisine_data.set_index("CUISINE")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # ORDER STATUS + LOYALTY
+    # --------------------------------------------------------
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    📦 Order Status Distribution
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        status_data = session.sql("""
+            SELECT
+                ORDER_STATUS,
+                TOTAL_ORDERS
+            FROM RESTAURANT_DB.GOLD.ORDER_STATUS_ANALYSIS
+            ORDER BY TOTAL_ORDERS DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            status_data.set_index("ORDER_STATUS")["TOTAL_ORDERS"],
+            use_container_width=True
+        )
+
+    with col2:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    👑 Revenue by Loyalty Tier
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        loyalty_data = session.sql("""
+            SELECT
+                LOYALTY_TIER,
+                TOTAL_REVENUE
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_LOYALTY_TIER
+            ORDER BY TOTAL_REVENUE DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            loyalty_data.set_index("LOYALTY_TIER")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+
+# ============================================================
+# SALES & REVENUE
+# ============================================================
+
+elif page == "💰 Sales & Revenue":
+
+    st.markdown(
+        """
+        <div class="page-title">Sales & Revenue</div>
+        <div class="page-description">
+            Analyze revenue trends, order channels and sales performance
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # --------------------------------------------------------
+    # REVENUE TREND - REDUCED WIDTH
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                📈 Revenue Trend
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    revenue_data = session.sql("""
+        SELECT
+            ORDER_DATE,
+            TOTAL_REVENUE
+        FROM RESTAURANT_DB.GOLD.REVENUE_BY_DATE
+        ORDER BY ORDER_DATE
+    """).to_pandas()
+
+    revenue_data["ORDER_DATE"] = pd.to_datetime(
+        revenue_data["ORDER_DATE"]
+    )
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.line_chart(
+            revenue_data.set_index("ORDER_DATE")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # CHANNEL
+    # --------------------------------------------------------
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    💳 Revenue by Channel
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        channel_data = session.sql("""
+            SELECT
+                ORDER_CHANNEL,
+                TOTAL_REVENUE
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_CHANNEL
+            ORDER BY TOTAL_REVENUE DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            channel_data.set_index("ORDER_CHANNEL")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+    with col2:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    📱 Orders by Channel
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        orders_channel_data = session.sql("""
+            SELECT
+                ORDER_CHANNEL,
+                TOTAL_ORDERS
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_CHANNEL
+            ORDER BY TOTAL_ORDERS DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            orders_channel_data.set_index("ORDER_CHANNEL")["TOTAL_ORDERS"],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # CUISINE
+    # --------------------------------------------------------
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    🌍 Revenue by Cuisine
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        cuisine_data = session.sql("""
+            SELECT
+                CUISINE,
+                TOTAL_REVENUE
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_CUISINE
+            ORDER BY TOTAL_REVENUE DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            cuisine_data.set_index("CUISINE")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+    with col2:
+
+        st.markdown(
+            """
+            <div class="section-header">
+                <div class="section-header-title">
+                    🍜 Items Sold by Cuisine
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        cuisine_items_data = session.sql("""
+            SELECT
+                CUISINE,
+                SUM(TOTAL_ITEMS_SOLD) AS ITEMS_SOLD
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_CUISINE
+            GROUP BY CUISINE
+            ORDER BY ITEMS_SOLD DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            cuisine_items_data.set_index("CUISINE")["ITEMS_SOLD"],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # LOYALTY - REDUCED WIDTH
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                👑 Revenue by Loyalty Tier
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+
+        loyalty_data = session.sql("""
+            SELECT
+                LOYALTY_TIER,
+                TOTAL_REVENUE
+            FROM RESTAURANT_DB.GOLD.REVENUE_BY_LOYALTY_TIER
+            ORDER BY TOTAL_REVENUE DESC
+        """).to_pandas()
+
+        st.bar_chart(
+            loyalty_data.set_index("LOYALTY_TIER")["TOTAL_REVENUE"],
+            use_container_width=True
+        )
+
+
+# ============================================================
+# RESTAURANT & MENU
+# ============================================================
+
+elif page == "🍔 Restaurant & Menu":
+
+    st.markdown(
+        """
+        <div class="page-title">Restaurant & Menu Analytics</div>
+        <div class="page-description">
+            Identify the best-performing restaurants and menu items
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # --------------------------------------------------------
+    # TOP RESTAURANTS - REDUCED WIDTH
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                🏆 Top 10 Restaurants by Revenue
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    restaurant_data = session.sql("""
+        SELECT
+            r.RESTAURANT_NAME,
+            SUM(f.NET_AMOUNT) AS TOTAL_REVENUE
+        FROM RESTAURANT_DB.GOLD.FACT_ORDERS f
+        JOIN RESTAURANT_DB.GOLD.DIM_RESTAURANT r
+            ON f.RESTAURANT_ID = r.RESTAURANT_ID
+        GROUP BY r.RESTAURANT_NAME
+        ORDER BY TOTAL_REVENUE DESC
+        LIMIT 10
+    """).to_pandas()
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.bar_chart(
+            restaurant_data.set_index("RESTAURANT_NAME")[
+                "TOTAL_REVENUE"
+            ],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # TOP MENU ITEMS - REDUCED WIDTH
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                🍔 Top 10 Menu Items by Revenue
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    menu_data = session.sql("""
+        SELECT
+            m.ITEM_NAME,
+            SUM(f.NET_AMOUNT) AS TOTAL_REVENUE
+        FROM RESTAURANT_DB.GOLD.FACT_ORDERS f
+        JOIN RESTAURANT_DB.GOLD.DIM_MENU_ITEM m
+            ON f.MENU_ITEM_ID = m.MENU_ITEM_ID
+        GROUP BY m.ITEM_NAME
+        ORDER BY TOTAL_REVENUE DESC
+        LIMIT 10
+    """).to_pandas()
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.bar_chart(
+            menu_data.set_index("ITEM_NAME")[
+                "TOTAL_REVENUE"
+            ],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # RESTAURANT SALES TABLE
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                📊 Restaurant Sales Summary
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.dataframe(
+        restaurant_data,
+        use_container_width=True,
+        hide_index=True
+    )
+
+
+# ============================================================
+# CUSTOMER ANALYTICS
+# ============================================================
+
+elif page == "👥 Customer Analytics":
+
+    st.markdown(
+        """
+        <div class="page-title">Customer Analytics</div>
+        <div class="page-description">
+            Understand customer satisfaction, loyalty and order behavior
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # --------------------------------------------------------
+    # LOYALTY
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                👑 Revenue by Loyalty Tier
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    loyalty_data = session.sql("""
+        SELECT
+            LOYALTY_TIER,
+            TOTAL_REVENUE
+        FROM RESTAURANT_DB.GOLD.REVENUE_BY_LOYALTY_TIER
+        ORDER BY TOTAL_REVENUE DESC
+    """).to_pandas()
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.bar_chart(
+            loyalty_data.set_index("LOYALTY_TIER")[
+                "TOTAL_REVENUE"
+            ],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # CUSTOMER REVIEWS
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                ⭐ Customer Review Analysis
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    review_data = session.sql("""
+        SELECT *
+        FROM RESTAURANT_DB.GOLD.CUSTOMER_REVIEW_ANALYSIS
+        ORDER BY TOTAL_REVIEWS DESC
+    """).to_pandas()
+
+    st.dataframe(
+        review_data,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # --------------------------------------------------------
+    # ORDER STATUS
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                📦 Order Status Distribution
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    status_data = session.sql("""
+        SELECT
+            ORDER_STATUS,
+            TOTAL_ORDERS
+        FROM RESTAURANT_DB.GOLD.ORDER_STATUS_ANALYSIS
+        ORDER BY TOTAL_ORDERS DESC
+    """).to_pandas()
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.bar_chart(
+            status_data.set_index("ORDER_STATUS")[
+                "TOTAL_ORDERS"
+            ],
+            use_container_width=True
+        )
+
+
+# ============================================================
+# DELIVERY & OPERATIONS
+# ============================================================
+
+elif page == "🚚 Delivery & Operations":
+
+    st.markdown(
+        """
+        <div class="page-title">Delivery & Operations</div>
+        <div class="page-description">
+            Monitor delivery partners, preparation time and delivery efficiency
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # --------------------------------------------------------
+    # DELIVERY PERFORMANCE
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                🚚 Delivery Performance by Partner
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    delivery_data = session.sql("""
+        SELECT
+            DELIVERY_PARTNER,
+            TOTAL_ORDERS,
+            AVG_DISTANCE_KM,
+            AVG_PREP_TIME_MIN,
+            AVG_DELIVERY_TIME_MIN,
+            AVG_TOTAL_DELIVERY_TIME_MIN
+        FROM RESTAURANT_DB.GOLD.DELIVERY_PERFORMANCE
+        ORDER BY AVG_TOTAL_DELIVERY_TIME_MIN
+    """).to_pandas()
+
+    st.dataframe(
+        delivery_data,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # --------------------------------------------------------
+    # DELIVERY TIME - REDUCED WIDTH
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                ⏱️ Average Delivery Time by Partner
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    delivery_time_data = session.sql("""
+        SELECT
+            DELIVERY_PARTNER,
+            AVG_DELIVERY_TIME_MIN
+        FROM RESTAURANT_DB.GOLD.DELIVERY_PERFORMANCE
+        ORDER BY AVG_DELIVERY_TIME_MIN
+    """).to_pandas()
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.bar_chart(
+            delivery_time_data.set_index("DELIVERY_PARTNER")[
+                "AVG_DELIVERY_TIME_MIN"
+            ],
+            use_container_width=True
+        )
+
+    # --------------------------------------------------------
+    # PREPARATION TIME - REDUCED WIDTH
+    # --------------------------------------------------------
+
+    st.markdown(
+        """
+        <div class="section-header">
+            <div class="section-header-title">
+                👨‍🍳 Average Preparation Time
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    prep_data = session.sql("""
+        SELECT
+            DELIVERY_PARTNER,
+            AVG_PREP_TIME_MIN
+        FROM RESTAURANT_DB.GOLD.DELIVERY_PERFORMANCE
+        ORDER BY AVG_PREP_TIME_MIN
+    """).to_pandas()
+
+    left, center, right = st.columns([1, 2.5, 1])
+
+    with center:
+        st.bar_chart(
+            prep_data.set_index("DELIVERY_PARTNER")[
+                "AVG_PREP_TIME_MIN"
+            ],
+            use_container_width=True
+        )
+
+
+# ============================================================
+# FOOTER
+# ============================================================
+
+st.markdown(
+    """
+    <div class="footer">
+        🍽️ Restaurant Analytics Dashboard
+        &nbsp; | &nbsp;
+        Snowflake + dbt + Streamlit
+        <br>
+        Restaurant Business Intelligence Platform
+    </div>
+    """,
+    unsafe_allow_html=True
+)
