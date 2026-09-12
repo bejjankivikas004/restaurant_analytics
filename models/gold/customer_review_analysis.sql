@@ -1,0 +1,14 @@
+{{ config(
+    schema='GOLD',
+    materialized='table'
+) }}
+
+SELECT
+    REVIEW_CATEGORY,
+    COUNT(*) AS TOTAL_REVIEWS,
+    ROUND(AVG(RATING), 2) AS AVG_RATING,
+    COUNT_IF(RATING >= 4) AS POSITIVE_REVIEWS,
+    COUNT_IF(RATING <= 2) AS NEGATIVE_REVIEWS
+FROM {{ ref('silver_reviews') }}
+GROUP BY REVIEW_CATEGORY
+ORDER BY AVG_RATING DESC

@@ -1,0 +1,75 @@
+{{ config(
+    schema='GOLD',
+    materialized='table'
+) }}
+
+WITH delivery AS (
+
+    SELECT
+        ORDER_ID,
+        DELIVERY_PARTNER,
+        DISTANCE_KM,
+        PREP_TIME_MIN,
+        DELIVERY_TIME_MIN,
+        TOTAL_DELIVERY_TIME_MIN,
+        DELIVERY_STATUS
+    FROM {{ ref('silver_delivery') }}
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY ORDER_ID
+        ORDER BY ORDER_ID
+    ) = 1
+
+),
+
+reviews AS (
+
+    SELECT
+        ORDER_ID,
+        RATING,
+        REVIEW_CATEGORY
+    FROM {{ ref('silver_reviews') }}
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY ORDER_ID
+        ORDER BY REVIEW_DATE DESC
+    ) = 1
+
+)
+
+SELECT
+    o.ORDER_ID,
+    o.ORDER_LINE_ID,
+    o.ORDER_DATE,
+
+    o.CUSTOMER_ID,
+    o.MENU_ITEM_ID,
+    o.RESTAURANT_ID,
+
+    o.ORDER_CHANNEL,
+    o.QTY,
+    o.UNIT_PRICE,
+    o.DISCOUNT_PCT,
+
+    o.GROSS_AMOUNT,
+    o.DISCOUNT_AMOUNT,
+    o.NET_AMOUNT,
+
+    o.PAYMENT_TYPE,
+    o.ORDER_STATUS,
+
+    COALESCE(d.DELIVERY_PARTNER, 'NOT_AVAILABLE') AS DELIVERY_PARTNER,
+    COALESCE(d.DISTANCE_KM, 0) AS DISTANCE_KM,
+    COALESCE(d.PREP_TIME_MIN, 0) AS PREP_TIME_MIN,
+    COALESCE(d.DELIVERY_TIME_MIN, 0) AS DELIVERY_TIME_MIN,
+    COALESCE(d.TOTAL_DELIVERY_TIME_MIN, 0) AS TOTAL_DELIVERY_TIME_MIN,
+    COALESCE(d.DELIVERY_STATUS, 'NOT_AVAILABLE') AS DELIVERY_STATUS,
+
+    COALESCE(r.RATING, 0) AS RATING,
+    COALESCE(r.REVIEW_CATEGORY, 'NO_REVIEW') AS REVIEW_CATEGORY
+
+FROM {{ ref('silver_orders') }} o
+
+LEFT JOIN delivery d
+    ON o.ORDER_ID = d.ORDER_ID
+
+LEFT JOIN reviews r
+    ON o.ORDER_ID = r.ORDER_ID

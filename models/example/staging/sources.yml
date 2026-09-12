@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: RESTAURANT_DB
+    schema: BRONZE
+    tables:
+      - name: BRONZE_CUSTOMERS
+      - name: BRONZE_ORDERS
+      - name: BRONZE_MENU_ITEMS
+      - name: BRONZE_LOCATIONS
+      - name: BRONZE_DELIVERY
+      - name: BRONZE_REVIEWS
+      - name: BRONZE_MASTER_ANALYTICS
