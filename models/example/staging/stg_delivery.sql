@@ -1,0 +1,13 @@
+{{ config(
+    schema='SILVER',
+    materialized='table'
+) }}
+
+SELECT
+    ORDER_ID,
+    UPPER(TRIM(DELIVERY_PARTNER)) AS DELIVERY_PARTNER,
+    DISTANCE_KM,
+    PREP_TIME_MIN,
+    DELIVERY_TIME_MIN,
+    UPPER(TRIM(DELIVERY_STATUS)) AS DELIVERY_STATUS
+FROM {{ source('bronze', 'BRONZE_DELIVERY') }}

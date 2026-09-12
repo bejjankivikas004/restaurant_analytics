@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: fact_orders
+    description: "Gold fact table containing order, delivery, and review information."
+
+    columns:
+      - name: ORDER_ID
+        tests:
+          - not_null
+
+      - name: ORDER_LINE_ID
+        tests:
+          - not_null
+
+      - name: CUSTOMER_ID
+        tests:
+          - not_null
+
+      - name: MENU_ITEM_ID
+        tests:
+          - not_null
+
+      - name: RESTAURANT_ID
+        tests:
+          - not_null
+
+      - name: NET_AMOUNT
+        tests:
+          - not_null

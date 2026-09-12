@@ -1,0 +1,13 @@
+{{ config(
+    schema='GOLD',
+    materialized='table'
+) }}
+
+SELECT
+    RESTAURANT_ID,
+    SUM(NET_AMOUNT) AS TOTAL_REVENUE,
+    COUNT(DISTINCT ORDER_ID) AS TOTAL_ORDERS,
+    SUM(QTY) AS TOTAL_ITEMS_SOLD
+FROM {{ ref('fact_orders') }}
+GROUP BY RESTAURANT_ID
+ORDER BY TOTAL_REVENUE DESC

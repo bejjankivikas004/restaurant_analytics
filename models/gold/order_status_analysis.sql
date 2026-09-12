@@ -1,0 +1,13 @@
+{{ config(
+    schema='GOLD',
+    materialized='table'
+) }}
+
+SELECT
+    ORDER_STATUS,
+    COUNT(DISTINCT ORDER_ID) AS TOTAL_ORDERS,
+    SUM(QTY) AS TOTAL_ITEMS_SOLD,
+    SUM(NET_AMOUNT) AS TOTAL_REVENUE
+FROM {{ ref('fact_orders') }}
+GROUP BY ORDER_STATUS
+ORDER BY TOTAL_ORDERS DESC

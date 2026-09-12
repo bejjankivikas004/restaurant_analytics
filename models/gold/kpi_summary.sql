@@ -1,0 +1,15 @@
+{{ config(
+    schema='GOLD',
+    materialized='table'
+) }}
+
+SELECT
+    COUNT(DISTINCT ORDER_ID) AS TOTAL_ORDERS,
+    SUM(QTY) AS TOTAL_ITEMS_SOLD,
+    SUM(NET_AMOUNT) AS TOTAL_REVENUE,
+    ROUND(
+        SUM(NET_AMOUNT) / NULLIF(COUNT(DISTINCT ORDER_ID), 0),
+        2
+    ) AS AVERAGE_ORDER_VALUE,
+    ROUND(AVG(NULLIF(RATING, 0)), 2) AS AVERAGE_RATING
+FROM {{ ref('fact_orders') }}

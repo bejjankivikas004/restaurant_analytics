@@ -1,0 +1,19 @@
+{{ config(
+    schema='SILVER',
+    materialized='table'
+) }}
+
+SELECT
+    ORDER_ID,
+    ORDER_LINE_ID,
+    ORDER_DATE,
+    CUSTOMER_ID,
+    MENU_ITEM_ID,
+    RESTAURANT_ID,
+    UPPER(TRIM(ORDER_CHANNEL)) AS ORDER_CHANNEL,
+    QTY,
+    UNIT_PRICE,
+    DISCOUNT_PCT,
+    UPPER(TRIM(PAYMENT_TYPE)) AS PAYMENT_TYPE,
+    UPPER(TRIM(ORDER_STATUS)) AS ORDER_STATUS
+FROM {{ source('bronze', 'BRONZE_ORDERS') }}
